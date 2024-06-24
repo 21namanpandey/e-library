@@ -1,0 +1,22 @@
+{
+  "name": "e-library",
+  "version": "1.0.0",
+  "description": "This is a ebook project",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.ts"
+  },
+  "keywords": [
+    "rest",
+    "api",
+    "express"
+  ],
+  "author": "Naman Pandey",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.14.8",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}
