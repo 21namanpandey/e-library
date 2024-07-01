@@ -95,4 +95,89 @@ async function cleanupTempFiles(filePaths: string[]) {
   );
 }
 
-export { createBook };
+const updateBook = async (req: Request, res: Response, next: NextFunction) => {
+  const { title, genre } = req.body;
+  const bookId = req.params.bookId;
+  const files = req.files as { [filename: string]: Express.Multer.File[] };
+
+  try {
+    const book = await bookModel.findOne({ _id: bookId });
+
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    // check access
+    const _req = req as AuthRequest;
+    if (book.author.toString() !== _req.userId) {
+      return next(
+        createHttpError(
+          403,
+          "Unauthorized access, you cannot update others' book"
+        )
+      );
+    }
+
+    // check if image field exists
+    let completeCoverImage = "";
+    if (files?.coverImage) {
+      const coverImageFile = files.coverImage[0];
+      const coverMimeType = files.coverImage[0].mimetype.split("/").at(-1);
+      const coverImagePath = path.resolve(
+        __dirname,
+        "../../public/data/uploads",
+        coverImageFile.filename
+      );
+      completeCoverImage = coverImageFile.filename;
+
+      const uploadResult = await cloudinary.uploader.upload(coverImagePath, {
+        filename_override: completeCoverImage,
+        folder: "book-covers",
+        format: coverMimeType,
+      });
+
+      completeCoverImage = uploadResult.secure_url;
+      await deleteFile(coverImagePath);
+    }
+
+    // check if file field exists
+    let completeFileName = "";
+    if (files?.file) {
+      const bookFile = files.file[0];
+      const bookFilePath = path.resolve(
+        __dirname,
+        "../../public/data/uploads",
+        bookFile.filename
+      );
+      completeFileName = bookFile.filename;
+
+      const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath, {
+        resource_type: "raw",
+        filename_override: completeFileName,
+        folder: "book-pdfs",
+        format: "pdf",
+      });
+
+      completeFileName = uploadResultPdf.secure_url;
+      await deleteFile(bookFilePath);
+    }
+
+    const updatedBook = await bookModel.findOneAndUpdate(
+      { _id: bookId },
+      {
+        title,
+        genre,
+        coverImage: completeCoverImage || book.coverImage,
+        file: completeFileName || book.file,
+      },
+      { new: true }
+    );
+
+    res.json({ updatedBook });
+  } catch (error) {
+    console.error("Error in updateBook:", error);
+    return next(createHttpError(500, "Error while updating the book"));
+  }
+};
+
+export { createBook, updateBook };
