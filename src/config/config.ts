@@ -10,6 +10,7 @@ const _config = {
   clodinaryCloud: process.env.CLOUDINARY_CLOUD,
   clodinaryApiKey: process.env.CLOUDINARY_API_KEY,
   clodinarySecret: process.env.CLOUDINARY_API_SECRET,
+  frontedDomain: process.env.FRONTEND_DOMAIN,
 };
 
 export const config = Object.freeze(_config);
