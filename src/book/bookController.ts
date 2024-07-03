@@ -7,7 +7,7 @@ import fs from "node:fs";
 import { AuthRequest } from "../middlewares/authenticate";
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
-  const { title, genre } = req.body;
+  const { title, genre, description } = req.body;
   const files = req.files as { [filename: string]: Express.Multer.File[] };
   const coverImageFile = files.coverImage[0];
   const coverImageMimeType = coverImageFile.mimetype.split("/").at(-1);
@@ -48,6 +48,7 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
     const newBook = await bookModel.create({
       title,
       genre,
+      description,
       author: _req.userId,
       coverImage: uploadResult.secure_url,
       file: bookFileUploadResult.secure_url,
@@ -96,7 +97,7 @@ async function cleanupTempFiles(filePaths: string[]) {
 }
 
 const updateBook = async (req: Request, res: Response, next: NextFunction) => {
-  const { title, genre } = req.body;
+  const { title, genre, description } = req.body;
   const bookId = req.params.bookId;
   const files = req.files as { [filename: string]: Express.Multer.File[] };
 
@@ -167,6 +168,7 @@ const updateBook = async (req: Request, res: Response, next: NextFunction) => {
       {
         title,
         genre,
+        description: description,
         coverImage: completeCoverImage || book.coverImage,
         file: completeFileName || book.file,
       },
@@ -183,7 +185,7 @@ const updateBook = async (req: Request, res: Response, next: NextFunction) => {
 const listBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // TODO: add pagination
-    const book = await bookModel.find().populate("author","name");
+    const book = await bookModel.find().populate("author", "name");
 
     res.json({ book });
   } catch (error) {
@@ -198,7 +200,9 @@ const getSingleBook = async (
 ) => {
   const bookId = req.params.bookId;
   try {
-    const book = await bookModel.findOne({ _id: bookId }).populate("author","name");
+    const book = await bookModel
+      .findOne({ _id: bookId })
+      .populate("author", "name");
     if (!book) {
       return next(createHttpError(404, "Book not found"));
     }
@@ -221,15 +225,22 @@ const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
     // Check access
     const _req = req as AuthRequest;
     if (book.author.toString() !== _req.userId) {
-      return next(createHttpError(403, "Unauthorized access, you cannot delete others' book"));
+      return next(
+        createHttpError(
+          403,
+          "Unauthorized access, you cannot delete others' book"
+        )
+      );
     }
 
     // Extract public IDs for Cloudinary
     const coverFileSplits = book.coverImage.split("/");
-    const coverimagePublicId = coverFileSplits.at(-2) + "/" + coverFileSplits.at(-1)?.split(".").at(-2);
+    const coverimagePublicId =
+      coverFileSplits.at(-2) + "/" + coverFileSplits.at(-1)?.split(".").at(-2);
 
     const bookFileSplits = book.file.split("/");
-    const bookFilePublicId = bookFileSplits.at(-2) + "/" + bookFileSplits.at(-1);
+    const bookFilePublicId =
+      bookFileSplits.at(-2) + "/" + bookFileSplits.at(-1);
 
     // Delete files from Cloudinary
     await cloudinary.uploader.destroy(coverimagePublicId);
