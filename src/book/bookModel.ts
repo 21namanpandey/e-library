@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { title } from "process";
 import { Book } from "./bookTypes";
 
 const bookSchema = new mongoose.Schema<Book>(
