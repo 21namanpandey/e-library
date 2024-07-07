@@ -175,7 +175,7 @@ const updateBook = async (req: Request, res: Response, next: NextFunction) => {
       { new: true }
     );
 
-    res.json({ updatedBook });
+    res.json(updatedBook);
   } catch (error) {
     console.error("Error in updateBook:", error);
     return next(createHttpError(500, "Error while updating the book"));
@@ -187,7 +187,7 @@ const listBook = async (req: Request, res: Response, next: NextFunction) => {
     // TODO: add pagination
     const book = await bookModel.find().populate("author", "name");
 
-    res.json({ book });
+    res.json( book );
   } catch (error) {
     return next(createHttpError(500, "Error while getting a book"));
   }
@@ -206,7 +206,7 @@ const getSingleBook = async (
     if (!book) {
       return next(createHttpError(404, "Book not found"));
     }
-    res.json({ book });
+    res.json( book );
   } catch (error) {
     return next(createHttpError(500, "Error while getting a single book"));
   }
@@ -216,7 +216,7 @@ const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
   const bookId = req.params.bookId;
 
   try {
-    const book = await bookModel.findOne({ _id: bookId });
+    const book = await bookModel.findOne({ _id: bookId })
 
     if (!book) {
       return next(createHttpError(404, "Book not found"));
